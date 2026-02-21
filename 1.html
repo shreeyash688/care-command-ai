@@ -1,0 +1,1642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CareCommand AI — HoloNurse</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#05101f;
+  --surface:#0b1929;
+  --card:rgba(16,32,56,0.7);
+  --border:rgba(0,212,170,0.12);
+  --border-dim:rgba(255,255,255,0.07);
+  --primary:#00d4aa;
+  --primary-dim:rgba(0,212,170,0.15);
+  --primary-glow:rgba(0,212,170,0.3);
+  --blue:#3b8beb;
+  --blue-dim:rgba(59,139,235,0.15);
+  --danger:#f04e6a;
+  --danger-dim:rgba(240,78,106,0.15);
+  --danger-glow:rgba(240,78,106,0.35);
+  --warn:#f5a623;
+  --warn-dim:rgba(245,166,35,0.15);
+  --purple:#a78bfa;
+  --text:#e8f1f9;
+  --muted:#5a7a99;
+  --muted2:#3a5a7a;
+  --radius:16px;
+  --radius-sm:10px;
+  --shadow:0 8px 32px rgba(0,0,0,0.4);
+  --shadow-card:0 2px 20px rgba(0,0,0,0.35);
+}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'DM Sans',sans-serif;
+  font-size:15px;
+  line-height:1.6;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+/* Background mesh */
+body::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  background:
+    radial-gradient(ellipse 80% 60% at 10% 0%, rgba(0,212,170,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 90% 100%, rgba(59,139,235,0.07) 0%, transparent 60%);
+  pointer-events:none;
+  z-index:0;
+}
+#app{position:relative;z-index:1;min-height:100vh}
+
+/* ── TYPOGRAPHY ── */
+h1,h2,h3,h4{font-family:'Syne',sans-serif;font-weight:700;line-height:1.2}
+.mono{font-family:'JetBrains Mono',monospace}
+
+/* ── LAYOUT ── */
+.screen{display:none;min-height:100vh;animation:fadeIn .4s ease}
+.screen.active{display:flex;flex-direction:column}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideIn{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+@keyframes breathe{0%,100%{box-shadow:0 0 0 0 var(--danger-glow)}50%{box-shadow:0 0 0 12px transparent}}
+@keyframes breatheTeal{0%,100%{box-shadow:0 0 0 0 var(--primary-glow)}50%{box-shadow:0 0 0 10px transparent}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes scan{0%,100%{top:8px}50%{top:calc(100% - 8px)}}
+@keyframes typewriter{from{width:0}to{width:100%}}
+@keyframes ripple{0%{transform:scale(0);opacity:1}100%{transform:scale(4);opacity:0}}
+@keyframes nodeAppear{from{opacity:0;transform:scale(0.5)}to{opacity:1;transform:scale(1)}}
+@keyframes badgeShimmer{0%{background-position:-100% 0}100%{background-position:200% 0}}
+@keyframes heatPulse{0%,100%{opacity:0.7}50%{opacity:1}}
+@keyframes emergencyPulse{0%,100%{background:rgba(240,78,106,0.15)}50%{background:rgba(240,78,106,0.3)}}
+@keyframes countUp{from{opacity:0}to{opacity:1}}
+@keyframes waveBreath{0%,100%{transform:scaleY(1)}50%{transform:scaleY(0.4)}}
+@keyframes floatUp{0%{opacity:0;transform:translateY(40px)}100%{opacity:1;transform:translateY(0)}}
+
+/* ── CARDS ── */
+.card{
+  background:var(--card);
+  border:1px solid var(--border-dim);
+  border-radius:var(--radius);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  box-shadow:var(--shadow-card);
+  transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease;
+}
+.card:hover{transform:translateY(-2px);border-color:var(--border);box-shadow:0 8px 40px rgba(0,0,0,0.5)}
+.card-glass{background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.08)}
+
+/* ── BUTTONS ── */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:14px 24px;border-radius:12px;font-family:'DM Sans',sans-serif;
+  font-size:15px;font-weight:600;border:none;cursor:pointer;
+  transition:all .2s ease;position:relative;overflow:hidden;text-decoration:none;
+  min-height:52px;
+}
+.btn::after{content:'';position:absolute;inset:0;background:white;opacity:0;transition:.3s}
+.btn:hover::after{opacity:.05}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:linear-gradient(135deg,#00d4aa,#00b899);color:#05101f}
+.btn-primary:hover{box-shadow:0 6px 24px rgba(0,212,170,0.4)}
+.btn-danger{background:linear-gradient(135deg,#f04e6a,#e0304d);color:#fff}
+.btn-danger:hover{box-shadow:0 6px 24px rgba(240,78,106,0.45)}
+.btn-outline{background:transparent;border:1.5px solid var(--border);color:var(--text)}
+.btn-outline:hover{border-color:var(--primary);color:var(--primary)}
+.btn-ghost{background:rgba(255,255,255,0.06);color:var(--text);border:1px solid rgba(255,255,255,0.08)}
+.btn-ghost:hover{background:rgba(255,255,255,0.1)}
+.btn-blue{background:linear-gradient(135deg,#3b8beb,#2563eb);color:#fff}
+.btn-blue:hover{box-shadow:0 6px 24px rgba(59,139,235,0.4)}
+.btn-warn{background:linear-gradient(135deg,#f5a623,#e8940f);color:#05101f}
+.btn-sm{padding:10px 18px;font-size:13px;min-height:40px;border-radius:10px}
+.btn-lg{padding:18px 32px;font-size:17px;min-height:60px;border-radius:14px}
+.btn-icon{width:52px;height:52px;padding:0;border-radius:14px}
+
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;letter-spacing:.03em}
+.badge-critical{background:var(--danger-dim);color:var(--danger);border:1px solid rgba(240,78,106,0.3)}
+.badge-moderate{background:var(--warn-dim);color:var(--warn);border:1px solid rgba(245,166,35,0.3)}
+.badge-stable{background:var(--primary-dim);color:var(--primary);border:1px solid rgba(0,212,170,0.3)}
+.badge-pending{background:rgba(90,122,153,0.2);color:var(--muted);border:1px solid rgba(90,122,153,0.3)}
+.badge-progress{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(59,139,235,0.3)}
+.badge-ai{background:linear-gradient(135deg,rgba(167,139,250,0.2),rgba(59,139,235,0.2));color:var(--purple);border:1px solid rgba(167,139,250,0.3)}
+.badge-verified{
+  background:linear-gradient(90deg,rgba(0,212,170,0.1),rgba(59,139,235,0.1),rgba(0,212,170,0.1));
+  background-size:200% 100%;
+  color:var(--primary);
+  border:1px solid rgba(0,212,170,0.3);
+  animation:badgeShimmer 3s ease-in-out infinite;
+}
+
+/* ── NAV ── */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 24px;
+  background:rgba(5,16,31,0.9);
+  border-bottom:1px solid var(--border-dim);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  position:sticky;top:0;z-index:100;
+}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;display:flex;align-items:center;gap:10px}
+.logo-mark{width:36px;height:36px;background:linear-gradient(135deg,#00d4aa,#3b8beb);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#00d4aa30,#3b8beb30);border:2px solid var(--primary);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;cursor:pointer;color:var(--primary)}
+
+/* ── INPUTS ── */
+.input{
+  width:100%;padding:14px 18px;background:rgba(255,255,255,0.05);
+  border:1.5px solid var(--border-dim);border-radius:12px;color:var(--text);
+  font-family:'DM Sans',sans-serif;font-size:15px;outline:none;transition:.2s;
+}
+.input:focus{border-color:var(--primary);background:rgba(0,212,170,0.05);box-shadow:0 0 0 3px rgba(0,212,170,0.1)}
+.input::placeholder{color:var(--muted)}
+.label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:8px;letter-spacing:.04em;text-transform:uppercase}
+
+/* ── CONTENT WRAPPERS ── */
+.page-content{padding:24px;flex:1;max-width:600px;margin:0 auto;width:100%}
+.page-content-wide{padding:24px;flex:1;width:100%}
+
+/* ── PROGRESS / METERS ── */
+.meter-bar{height:6px;border-radius:99px;background:rgba(255,255,255,0.08);overflow:hidden}
+.meter-fill{height:100%;border-radius:99px;transition:width .6s ease}
+.meter-low{background:linear-gradient(90deg,#00d4aa,#00b899)}
+.meter-med{background:linear-gradient(90deg,#f5a623,#e8940f)}
+.meter-high{background:linear-gradient(90deg,#f04e6a,#e0304d)}
+
+/* ── STATUS DOT ── */
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0}
+.dot-green{background:#00d4aa;box-shadow:0 0 6px #00d4aa}
+.dot-red{background:#f04e6a;box-shadow:0 0 6px #f04e6a;animation:pulse 1.5s ease-in-out infinite}
+.dot-yellow{background:#f5a623;box-shadow:0 0 6px #f5a623}
+
+/* ── DIVIDER ── */
+.divider{height:1px;background:var(--border-dim);margin:20px 0}
+
+/* ── STAGGER CHILDREN ── */
+.stagger>*{opacity:0;animation:slideUp .5s ease forwards}
+.stagger>*:nth-child(1){animation-delay:.05s}
+.stagger>*:nth-child(2){animation-delay:.1s}
+.stagger>*:nth-child(3){animation-delay:.15s}
+.stagger>*:nth-child(4){animation-delay:.2s}
+.stagger>*:nth-child(5){animation-delay:.25s}
+.stagger>*:nth-child(6){animation-delay:.3s}
+.stagger>*:nth-child(7){animation-delay:.35s}
+
+/* ── PATIENT CARDS ── */
+.patient-card{
+  padding:18px;border-radius:var(--radius);cursor:pointer;
+  border:1.5px solid var(--border-dim);
+  background:var(--card);
+  transition:all .2s ease;
+  backdrop-filter:blur(16px);
+}
+.patient-card:hover{border-color:var(--primary);transform:translateX(4px)}
+.patient-card.critical{border-color:rgba(240,78,106,0.35);animation:breathe 3s ease-in-out infinite}
+.patient-card.moderate{border-color:rgba(245,166,35,0.3)}
+
+/* ── MISSION CARDS ── */
+.mission-card{
+  padding:18px;border-radius:var(--radius);
+  border:1.5px solid var(--border-dim);
+  background:var(--card);
+  transition:all .25s ease;
+}
+.mission-card.completed{
+  border-color:rgba(0,212,170,0.3);
+  background:rgba(0,212,170,0.05);
+  opacity:.8;
+}
+.mission-card.in-progress{
+  border-color:rgba(59,139,235,0.4);
+  background:rgba(59,139,235,0.05);
+  animation:breatheTeal 3s ease-in-out infinite;
+}
+.mission-check{
+  width:28px;height:28px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;flex-shrink:0;transition:all .3s ease;
+}
+.mission-check.done{background:linear-gradient(135deg,#00d4aa,#00b899);color:#05101f}
+.mission-check.active{background:linear-gradient(135deg,#3b8beb,#2563eb);color:#fff}
+.mission-check.pending{background:rgba(255,255,255,0.08);color:var(--muted)}
+
+/* ── TIMELINE ── */
+.timeline-track{position:relative;padding-left:40px}
+.timeline-track::before{content:'';position:absolute;left:14px;top:0;bottom:0;width:2px;background:linear-gradient(to bottom,var(--primary),rgba(0,212,170,0.1))}
+.timeline-event{position:relative;padding-bottom:24px;animation:nodeAppear .5s ease backwards}
+.timeline-node{
+  position:absolute;left:-33px;top:2px;
+  width:16px;height:16px;border-radius:50%;
+  background:var(--primary);border:3px solid var(--bg);
+  box-shadow:0 0 8px var(--primary-glow);
+}
+.timeline-node.warning{background:var(--warn);box-shadow:0 0 8px rgba(245,166,35,0.4)}
+.timeline-node.danger{background:var(--danger);box-shadow:0 0 8px var(--danger-glow)}
+
+/* ── QR SCANNER ── */
+.qr-frame{
+  position:relative;width:260px;height:260px;border-radius:20px;
+  overflow:hidden;border:2px solid rgba(0,212,170,0.3);
+}
+.qr-scan-line{
+  position:absolute;left:8px;right:8px;height:2px;
+  background:linear-gradient(90deg,transparent,var(--primary),transparent);
+  animation:scan 2.5s ease-in-out infinite;
+  box-shadow:0 0 12px var(--primary);
+}
+.qr-corner{position:absolute;width:24px;height:24px;border-color:var(--primary);border-style:solid}
+.qr-corner.tl{top:8px;left:8px;border-width:3px 0 0 3px;border-radius:4px 0 0 0}
+.qr-corner.tr{top:8px;right:8px;border-width:3px 3px 0 0;border-radius:0 4px 0 0}
+.qr-corner.bl{bottom:8px;left:8px;border-width:0 0 3px 3px;border-radius:0 0 0 4px}
+.qr-corner.br{bottom:8px;right:8px;border-width:0 3px 3px 0;border-radius:0 0 4px 0}
+
+/* ── HEATMAP ── */
+.heatmap-grid{display:grid;gap:8px}
+.heatmap-cell{
+  padding:12px;border-radius:10px;text-align:center;font-size:12px;font-weight:600;
+  transition:transform .2s,box-shadow .2s;cursor:pointer;
+  animation:heatPulse 4s ease-in-out infinite;
+}
+.heatmap-cell:hover{transform:scale(1.05);box-shadow:0 4px 20px rgba(0,0,0,0.4)}
+.heat-0{background:rgba(0,212,170,0.15);color:var(--primary);animation-delay:0s}
+.heat-1{background:rgba(0,212,170,0.25);color:var(--primary);animation-delay:.3s}
+.heat-2{background:rgba(245,166,35,0.2);color:var(--warn);animation-delay:.6s}
+.heat-3{background:rgba(245,166,35,0.35);color:var(--warn);animation-delay:.9s}
+.heat-4{background:rgba(240,78,106,0.25);color:var(--danger);animation-delay:1.2s}
+.heat-5{background:rgba(240,78,106,0.4);color:var(--danger);animation-delay:1.5s}
+
+/* ── SKILL CHIPS ── */
+.chip{
+  padding:10px 18px;border-radius:99px;font-size:13px;font-weight:600;cursor:pointer;
+  border:1.5px solid var(--border-dim);color:var(--muted);background:transparent;
+  transition:all .2s ease;
+}
+.chip.selected{
+  border-color:var(--primary);color:var(--primary);
+  background:var(--primary-dim);
+}
+.chip:hover{border-color:rgba(0,212,170,0.3);color:var(--text)}
+
+/* ── BREATHING EXERCISE ── */
+.breath-circle{
+  width:160px;height:160px;border-radius:50%;
+  background:radial-gradient(circle,rgba(0,212,170,0.3),rgba(0,212,170,0.05));
+  border:2px solid rgba(0,212,170,0.3);
+  display:flex;align-items:center;justify-content:center;
+  animation:breatheTeal 4s ease-in-out infinite;
+  cursor:pointer;
+}
+
+/* ── AI CARD ── */
+.ai-card{
+  border:1.5px solid rgba(167,139,250,0.3);
+  background:linear-gradient(135deg,rgba(167,139,250,0.08),rgba(59,139,235,0.08));
+  border-radius:var(--radius);
+  padding:18px;
+  animation:slideIn .5s ease;
+}
+
+/* ── WORKLOAD METER ── */
+.workload-ring{
+  width:80px;height:80px;border-radius:50%;
+  background:conic-gradient(var(--fill-color) var(--pct), rgba(255,255,255,0.06) 0deg);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;
+}
+.workload-ring::before{
+  content:'';position:absolute;inset:8px;border-radius:50%;background:var(--surface);
+}
+
+/* ── EMERGENCY ── */
+.emergency-overlay{
+  position:fixed;inset:0;z-index:1000;
+  background:rgba(240,78,106,0.12);
+  animation:emergencyPulse 1.5s ease-in-out infinite;
+  pointer-events:none;
+}
+.emergency-btn{
+  width:80px;height:80px;border-radius:50%;
+  background:linear-gradient(135deg,#f04e6a,#c0392b);
+  border:none;cursor:pointer;font-size:28px;
+  box-shadow:0 0 0 0 rgba(240,78,106,0.5);
+  animation:breathe 2s ease-in-out infinite;
+  transition:transform .2s ease;
+}
+.emergency-btn:hover{transform:scale(1.08)}
+.emergency-btn:active{transform:scale(.95)}
+
+/* ── NOTIFICATIONS ── */
+.notif{
+  position:fixed;bottom:24px;right:24px;z-index:999;
+  background:var(--card);border:1.5px solid var(--border);
+  border-radius:14px;padding:16px 20px;max-width:320px;
+  backdrop-filter:blur(20px);box-shadow:0 8px 40px rgba(0,0,0,0.5);
+  animation:slideUp .4s ease;
+}
+.notif-danger{border-color:rgba(240,78,106,0.5);background:rgba(240,78,106,0.08)}
+
+/* ── MISC ── */
+.section-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px}
+.wave-bars{display:flex;align-items:center;gap:2px;height:24px}
+.wave-bar{width:3px;border-radius:99px;background:var(--primary);animation:waveBreath 1.2s ease-in-out infinite}
+.wave-bar:nth-child(2){animation-delay:.1s;height:70%}
+.wave-bar:nth-child(3){animation-delay:.2s;height:100%}
+.wave-bar:nth-child(4){animation-delay:.3s;height:60%}
+.wave-bar:nth-child(5){animation-delay:.4s;height:80%}
+.tag{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;background:rgba(255,255,255,0.06);border:1px solid var(--border-dim);border-radius:6px;font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+
+/* ── MODAL ── */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;
+  display:flex;align-items:center;justify-content:center;padding:24px;
+  backdrop-filter:blur(6px);animation:fadeIn .2s ease;
+}
+.modal{
+  background:#0b1929;border:1px solid var(--border);border-radius:20px;
+  padding:32px;max-width:480px;width:100%;
+  box-shadow:0 24px 80px rgba(0,0,0,0.6);
+  animation:slideUp .3s ease;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(0,212,170,0.2);border-radius:99px}
+
+/* ── ROLE SELECTOR ── */
+.role-card{
+  padding:20px;border-radius:var(--radius);border:2px solid var(--border-dim);
+  cursor:pointer;transition:all .2s ease;text-align:center;
+  background:rgba(255,255,255,0.03);
+}
+.role-card:hover,.role-card.active{
+  border-color:var(--primary);background:var(--primary-dim);
+  transform:translateY(-3px);
+}
+.role-icon{font-size:32px;margin-bottom:8px}
+.role-label{font-family:'Syne',sans-serif;font-weight:700;font-size:14px}
+
+/* ── STEP INDICATOR ── */
+.step-row{display:flex;gap:6px;margin-bottom:28px}
+.step-dot{height:4px;border-radius:99px;flex:1;background:rgba(255,255,255,0.1);transition:.3s}
+.step-dot.done{background:var(--primary)}
+
+/* ── FLOATING EMERGENCY ── */
+.fab-emergency{
+  position:fixed;bottom:24px;right:24px;z-index:200;
+  width:62px;height:62px;border-radius:50%;
+  background:linear-gradient(135deg,#f04e6a,#c0392b);
+  border:none;cursor:pointer;font-size:22px;color:#fff;
+  box-shadow:0 4px 20px rgba(240,78,106,0.5);
+  animation:breathe 2.5s ease-in-out infinite;
+  transition:transform .2s;display:flex;align-items:center;justify-content:center;
+}
+.fab-emergency:hover{transform:scale(1.1)}
+
+/* ── GRID HELPERS ── */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.flex{display:flex}.flex-col{flex-direction:column}.items-center{align-items:center}.justify-between{justify-content:space-between}.justify-center{justify-content:center}.gap-2{gap:8px}.gap-3{gap:12px}.gap-4{gap:16px}.gap-5{gap:20px}.flex-1{flex:1}
+.mt-1{margin-top:6px}.mt-2{margin-top:12px}.mt-3{margin-top:18px}.mt-4{margin-top:24px}.mt-5{margin-top:32px}
+.mb-1{margin-bottom:6px}.mb-2{margin-bottom:12px}.mb-3{margin-bottom:18px}.mb-4{margin-bottom:24px}
+.text-sm{font-size:13px}.text-xs{font-size:11px}.text-lg{font-size:18px}.text-xl{font-size:22px}.text-2xl{font-size:28px}.text-3xl{font-size:36px}
+.text-primary{color:var(--primary)}.text-danger{color:var(--danger)}.text-warn{color:var(--warn)}.text-muted{color:var(--muted)}.text-blue{color:var(--blue)}.text-purple{color:var(--purple)}
+.font-bold{font-weight:700}.font-semibold{font-weight:600}.font-syne{font-family:'Syne',sans-serif}
+.w-full{width:100%}.text-center{text-align:center}
+.p-3{padding:16px}.p-4{padding:20px}.p-5{padding:28px}
+.rounded-full{border-radius:99px}.rounded-xl{border-radius:14px}
+
+/* ── STAT CARD ── */
+.stat-card{
+  padding:16px;border-radius:var(--radius-sm);text-align:center;
+  background:rgba(255,255,255,0.04);border:1px solid var(--border-dim);
+}
+.stat-num{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;line-height:1}
+.stat-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:4px}
+
+/* ── BACK BTN ── */
+.back-btn{
+  display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.06);
+  border:1px solid var(--border-dim);border-radius:10px;padding:8px 16px;
+  cursor:pointer;font-size:14px;color:var(--muted);transition:.2s;
+}
+.back-btn:hover{color:var(--text);border-color:var(--primary)}
+
+/* ── NOTIFICATION BADGE ── */
+.notif-badge{
+  position:absolute;top:-4px;right:-4px;width:18px;height:18px;
+  border-radius:50%;background:var(--danger);font-size:10px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;color:#fff;
+  border:2px solid var(--bg);
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ════════════════════════ LOGIN SCREEN ════════════════════════ -->
+<div class="screen active" id="screen-login">
+  <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px">
+    <div class="stagger" style="max-width:440px;width:100%">
+      <!-- Logo -->
+      <div class="text-center mb-4">
+        <div style="display:inline-flex;align-items:center;justify-content:center;width:72px;height:72px;background:linear-gradient(135deg,#00d4aa,#3b8beb);border-radius:20px;font-size:32px;margin-bottom:16px;box-shadow:0 12px 40px rgba(0,212,170,0.35)">⚕️</div>
+        <h1 class="text-2xl" style="margin-bottom:4px">CareCommand <span class="text-primary">AI</span></h1>
+        <p class="text-sm text-muted">HoloNurse — Hospital Mission Control</p>
+      </div>
+
+      <!-- Role Cards -->
+      <div class="card p-4">
+        <p class="section-title mb-3">Select Your Role</p>
+        <div class="grid-2 mb-3" id="role-grid">
+          <div class="role-card active" data-role="nurse" onclick="selectRole(this,'nurse')">
+            <div class="role-icon">👩‍⚕️</div>
+            <div class="role-label">Nurse</div>
+          </div>
+          <div class="role-card" data-role="doctor" onclick="selectRole(this,'doctor')">
+            <div class="role-icon">🩺</div>
+            <div class="role-label">Doctor</div>
+          </div>
+          <div class="role-card" data-role="admin" onclick="selectRole(this,'admin')">
+            <div class="role-icon">📊</div>
+            <div class="role-label">Admin</div>
+          </div>
+          <div class="role-card" data-role="patient" onclick="selectRole(this,'patient')">
+            <div class="role-icon">🛏️</div>
+            <div class="role-label">Patient</div>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="label">User ID</label>
+          <input class="input" type="text" placeholder="Enter your ID" value="nurse_001">
+        </div>
+        <div class="mb-3">
+          <label class="label">Password</label>
+          <input class="input" type="password" placeholder="••••••••" value="••••••••">
+        </div>
+        <button class="btn btn-primary w-full btn-lg" onclick="handleLogin()">Login to HoloNurse →</button>
+        <p class="text-center text-sm text-muted mt-2" style="cursor:pointer;text-decoration:underline">Forgot Password?</p>
+      </div>
+
+      <div class="text-center mt-3">
+        <div class="flex items-center justify-center gap-2">
+          <div class="dot dot-green"></div>
+          <span class="text-xs text-muted">All systems operational · City General Hospital</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════ NURSE ONBOARDING ════════════════════════ -->
+<div class="screen" id="screen-onboarding">
+  <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px">
+    <div style="max-width:480px;width:100%">
+      <div class="step-row">
+        <div class="step-dot done"></div>
+        <div class="step-dot done"></div>
+        <div class="step-dot" id="ob-step3"></div>
+      </div>
+      <h2 class="text-xl mb-1">Setup Your <span class="text-primary">Expertise</span></h2>
+      <p class="text-sm text-muted mb-4">We'll use this to assign tasks that match your skills</p>
+
+      <div class="card p-4 mb-3">
+        <p class="section-title">Select Your Specialties</p>
+        <div class="flex" style="flex-wrap:wrap;gap:10px" id="skill-chips">
+          <div class="chip selected" onclick="toggleChip(this)">🫀 ICU Monitoring</div>
+          <div class="chip selected" onclick="toggleChip(this)">🚨 Emergency Care</div>
+          <div class="chip" onclick="toggleChip(this)">👶 Pediatric Care</div>
+          <div class="chip" onclick="toggleChip(this)">💊 Medicine Admin</div>
+          <div class="chip selected" onclick="toggleChip(this)">🩹 Wound Dressing</div>
+          <div class="chip" onclick="toggleChip(this)">🔬 Surgery Assist</div>
+          <div class="chip" onclick="toggleChip(this)">📡 Telemetry</div>
+          <div class="chip" onclick="toggleChip(this)">🩸 IV Therapy</div>
+        </div>
+      </div>
+
+      <div class="flex gap-3">
+        <button class="btn btn-ghost flex-1" onclick="goTo('screen-nurse-dashboard')">Skip for Now</button>
+        <button class="btn btn-primary flex-1" onclick="saveSkills()">Save & Continue →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════ NURSE DASHBOARD ════════════════════════ -->
+<div class="screen" id="screen-nurse-dashboard">
+  <div class="topbar">
+    <div class="logo">
+      <div class="logo-mark">⚕</div>
+      <div>
+        <div style="font-size:14px;line-height:1.1">HoloNurse</div>
+        <div style="font-size:11px;font-weight:400;color:var(--muted)">Ward 4 · ICU</div>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <div style="position:relative;cursor:pointer" onclick="showNotif()">
+        <div class="btn-ghost btn btn-icon" style="font-size:18px">🔔</div>
+        <div class="notif-badge">3</div>
+      </div>
+      <button class="btn btn-ghost btn-icon" onclick="goTo('screen-break')">☕</button>
+      <button class="btn btn-danger btn-sm" onclick="goTo('screen-login')">Logout</button>
+    </div>
+  </div>
+
+  <div class="page-content stagger">
+    <!-- Nurse info -->
+    <div class="card p-4 mb-3">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm text-muted">Good Morning</p>
+          <h2 class="text-xl" style="margin-bottom:2px">Nurse Sarah R.</h2>
+          <div class="flex items-center gap-2 mt-1">
+            <span class="tag">ICU Expert</span>
+            <span class="tag">Emergency</span>
+          </div>
+        </div>
+        <div style="text-align:center">
+          <div class="stat-num" style="color:var(--warn)">65%</div>
+          <div class="stat-label">Workload</div>
+          <div class="badge badge-moderate mt-1">Medium</div>
+        </div>
+      </div>
+      <div class="mt-3">
+        <div class="flex justify-between text-sm mb-1">
+          <span class="text-muted">Task Load</span>
+          <span class="text-warn font-semibold">6/9 tasks</span>
+        </div>
+        <div class="meter-bar"><div class="meter-fill meter-med" style="width:65%"></div></div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="grid-3 mb-3">
+      <button class="btn btn-ghost flex-col" style="height:68px;flex-direction:column;gap:4px;font-size:12px" onclick="goTo('screen-qr')">
+        <span style="font-size:22px">📷</span> Scan QR
+      </button>
+      <button class="btn btn-ghost flex-col" style="height:68px;flex-direction:column;gap:4px;font-size:12px" onclick="goTo('screen-help')">
+        <span style="font-size:22px">🤝</span> Request Help
+      </button>
+      <button class="btn btn-danger flex-col" style="height:68px;flex-direction:column;gap:4px;font-size:12px" onclick="goTo('screen-emergency')">
+        <span style="font-size:22px">🚨</span> Emergency
+      </button>
+    </div>
+
+    <!-- Alert Card -->
+    <div class="card p-3 mb-3" style="border-color:rgba(240,78,106,0.4);background:rgba(240,78,106,0.06)">
+      <div class="flex items-center gap-3">
+        <div style="font-size:24px">⚠️</div>
+        <div class="flex-1">
+          <div class="font-semibold text-danger text-sm">Critical Alert — Room 204</div>
+          <div class="text-xs text-muted mt-1">Patient Ahmed K.: Oxygen saturation dropped to 88%</div>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="goTo('screen-patient')">View →</button>
+      </div>
+    </div>
+
+    <!-- Patient List -->
+    <p class="section-title">Patient Missions</p>
+    <div class="flex flex-col gap-3" id="patient-list"></div>
+
+    <!-- Shift handoff -->
+    <div class="mt-4">
+      <button class="btn btn-outline w-full" onclick="goTo('screen-handoff')">📋 Generate Shift Handoff Summary</button>
+    </div>
+  </div>
+
+  <!-- FAB Emergency -->
+  <button class="fab-emergency" onclick="goTo('screen-emergency')">🚨</button>
+</div>
+
+<!-- ════════════════════════ QR SCAN ════════════════════════ -->
+<div class="screen" id="screen-qr">
+  <div class="topbar">
+    <button class="back-btn" onclick="goBack()">← Back</button>
+    <div class="font-syne font-bold">Scan Patient QR</div>
+    <div style="width:80px"></div>
+  </div>
+
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center">
+    <h2 class="text-xl mb-1">Identify Patient</h2>
+    <p class="text-sm text-muted mb-5">Point camera at patient's bedside QR tag</p>
+
+    <div class="qr-frame" style="background:rgba(0,212,170,0.04)">
+      <div class="qr-scan-line"></div>
+      <div class="qr-corner tl"></div>
+      <div class="qr-corner tr"></div>
+      <div class="qr-corner bl"></div>
+      <div class="qr-corner br"></div>
+      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:.3">
+        <div style="font-size:80px">⬛</div>
+      </div>
+    </div>
+
+    <p class="text-sm text-primary mt-4" style="animation:pulse 2s infinite">● Scanning…</p>
+
+    <div class="mt-5">
+      <button class="btn btn-primary btn-lg w-full" onclick="simulateScan()" style="max-width:320px">
+        📷 Simulate Scan (Demo)
+      </button>
+      <p class="text-xs text-muted mt-2">Auto-detects patient profile instantly</p>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════ PATIENT DETAIL ════════════════════════ -->
+<div class="screen" id="screen-patient">
+  <div class="topbar">
+    <button class="back-btn" onclick="goBack()">← Back</button>
+    <div class="font-syne font-bold">Patient Profile</div>
+    <button class="btn btn-ghost btn-sm" onclick="goTo('screen-timeline')">Timeline</button>
+  </div>
+
+  <div class="page-content stagger">
+    <!-- Patient card -->
+    <div class="card p-4 mb-3" style="border-color:rgba(240,78,106,0.4);background:rgba(240,78,106,0.05)">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <h2 class="text-xl">Ahmed Khalid</h2>
+          <p class="text-sm text-muted">Room 204 · ICU</p>
+        </div>
+        <div>
+          <div class="badge badge-critical">🔴 Critical</div>
+          <div class="text-xs text-muted text-center mt-1">Priority #1</div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="stat-card">
+          <div class="stat-num" style="font-size:18px">58y</div>
+          <div class="stat-label">Age</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" style="font-size:18px;color:var(--danger)">88%</div>
+          <div class="stat-label">SpO₂</div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="grid-2 text-sm">
+        <div><span class="text-muted">Diagnosis</span><br><span class="font-semibold">Acute Pneumonia</span></div>
+        <div><span class="text-muted">Doctor</span><br><span class="font-semibold">Dr. Patel</span></div>
+      </div>
+    </div>
+
+    <!-- Vitals row -->
+    <div class="grid-3 mb-3">
+      <div class="stat-card"><div class="stat-num text-warn">120/80</div><div class="stat-label">BP</div></div>
+      <div class="stat-card"><div class="stat-num text-danger">104</div><div class="stat-label">BPM</div></div>
+      <div class="stat-card"><div class="stat-num text-primary">38.2°</div><div class="stat-label">Temp</div></div>
+    </div>
+
+    <!-- Missions -->
+    <p class="section-title">Active Missions</p>
+    <div class="flex flex-col gap-3" id="mission-list"></div>
+  </div>
+  <button class="fab-emergency" onclick="goTo('screen-emergency')">🚨</button>
+</div>
+
+<!-- ════════════════════════ MISSION EXECUTION ════════════════════════ -->
+<div class="screen" id="screen-mission">
+  <div class="topbar">
+    <button class="back-btn" onclick="goBack()">← Back</button>
+    <div class="font-syne font-bold" id="mission-title-bar">Mission Execution</div>
+    <div style="width:80px"></div>
+  </div>
+
+  <div class="page-content">
+    <div class="card p-4 mb-3" style="border-color:var(--primary);background:var(--primary-dim)">
+      <div class="flex items-center gap-3 mb-2">
+        <div style="font-size:28px" id="mission-icon">💊</div>
+        <div>
+          <div class="font-syne font-bold text-lg" id="mission-heading">Administer Medication</div>
+          <div class="badge badge-progress mt-1">In Progress</div>
+        </div>
+      </div>
+      <div class="flex items-center justify-between text-sm text-muted">
+        <span>Patient: Ahmed Khalid · Room 204</span>
+        <div class="wave-bars">
+          <div class="wave-bar" style="height:8px"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+        </div>
+      </div>
+    </div>
+
+    <p class="section-title">Step-by-Step Instructions</p>
+    <div class="flex flex-col gap-3 mb-4" id="mission-steps-list"></div>
+
+    <div class="card p-3 mb-4" style="display:flex;align-items:center;gap:14px;border-color:rgba(59,139,235,0.3)">
+      <div style="font-size:24px">🎙️</div>
+      <div class="flex-1">
+        <div class="font-semibold text-sm">Voice Guidance</div>
+        <div class="text-xs text-muted">Tap to hear step-by-step audio</div>
+      </div>
+      <button class="btn btn-blue btn-sm" onclick="playVoiceGuidance()">▶ Play</button>
+    </div>
+
+    <div class="flex flex-col gap-3">
+      <button class="btn btn-primary btn-lg w-full" onclick="completeMission()">✅ Mark Mission Complete</button>
+      <div class="flex gap-3">
+        <button class="btn btn-ghost flex-1" onclick="goTo('screen-help')">🤝 Request Help</button>
+        <button class="btn btn-outline flex-1" onclick="showReportIssue()">⚠ Report Issue</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════ CARE TIMELINE ════════════════════════ -->
+<div class="screen" id="screen-timeline">
+  <div class="topbar">
+    <button class="back-btn" onclick="goBack()">← Back</button>
+    <div class="font-syne font-bold">Care Timeline</div>
+    <div class="badge badge-verified">⛓ Verified</div>
+  </div>
+
+  <div class="page-content stagger">
+    <div class="card p-3 mb-3">
+      <div class="flex items-center gap-3">
+        <div style="font-size:22px">🛏️</div>
+        <div>
+          <div class="font-semibold">Ahmed Khalid</div>
+          <div class="text-sm text-muted">Room 204 · ICU · Admitted 3 days ago</div>
+        </div>
+        <div class="badge badge-verified ml-auto">⛓ Blockchain</div>
+      </div>
+    </div>
+
+    <p class="section-title">Care Events</p>
+    <div class="timeline-track" id="timeline-track"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════ HELP REQUEST ════════════════════════ -->
+<div class="screen" id="screen-help">
+  <div class="topbar">
+    <button class="back-btn" onclick="goBack()">← Back</button>
+    <div class="font-syne font-bold">Request Help</div>
+    <div style="width:80px"></div>
+  </div>
+
+  <div class="page-content stagger">
+    <div class="card p-4 mb-3">
+      <p class="section-title">Type of Help Needed</p>
+      <div class="flex" style="flex-wrap:wrap;gap:10px" id="help-type-chips">
+        <div class="chip selected" onclick="toggleChip(this)">🩸 IV Setup</div>
+        <div class="chip" onclick="toggleChip(this)">🚨 Emergency Assist</div>
+        <div class="chip" onclick="toggleChip(this)">📡 Monitoring</div>
+        <div class="chip" onclick="toggleChip(this)">💊 Medication</div>
+        <div class="chip" onclick="toggleChip(this)">🩹 Wound Care</div>
+        <div class="chip" onclick="toggleChip(this)">🔄 Patient Transfer</div>
+      </div>
+    </div>
+
+    <div class="card p-4 mb-3">
+      <label class="label">Location / Ward</label>
+      <input class="input mb-3" value="ICU Ward 4 — Room 204" type="text">
+      <label class="label">Additional Notes</label>
+      <textarea class="input" rows="3" placeholder="Any extra context…" style="resize:none">Patient needs IV replacement urgently. Shaking hands.</textarea>
+    </div>
+
+    <button class="btn btn-primary w-full btn-lg mb-3" onclick="sendHelpRequest()">🤝 Send Help Request</button>
+
+    <!-- AI Recommendation (shown after sending) -->
+    <div class="ai-card" id="ai-recommendation" style="display:none">
+      <div class="flex items-center gap-2 mb-3">
+        <div class="badge badge-ai">✨ AI Match</div>
+        <div class="text-sm text-muted">Best available nurse</div>
+      </div>
+      <div class="flex items-center gap-3 mb-3">
+        <div class="avatar" style="width:48px;height:48px;font-size:16px">PR</div>
+        <div>
+          <div class="font-semibold">Nurse Priya Rajan</div>
+          <div class="text-sm text-primary">IV Expert · On Duty</div>
+          <div class="flex gap-2 mt-1">
+            <span class="tag">Expertise: IV Therapy</span>
+            <span class="tag">~2 min away</span>
+          </div>
+        </div>
+        <div class="ml-auto text-center">
+          <div class="font-syne font-bold text-primary text-2xl">96%</div>
+          <div class="text-xs text-muted">Match</div>
+        </div>
+      </div>
+      <div class="flex gap-3">
+        <button class="btn btn-primary flex-1">✓ Accept Help</button>
+        <button class="btn btn-ghost flex-1">Find Another</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════ EMERGENCY ════════════════════════ -->
+<div class="screen" id="screen-emergency">
+  <div class="topbar" style="border-bottom-color:rgba(240,78,106,0.3)">
+    <button class="back-btn" onclick="goBack()">← Back</button>
+    <div class="font-syne font-bold text-danger">EMERGENCY MODE</div>
+    <div style="width:80px"></div>
+  </div>
+
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center" id="emergency-main">
+    <div style="font-size:48px mb-3">🚨</div>
+    <h2 class="text-2xl font-syne mt-2 mb-1">Emergency Alert</h2>
+    <p class="text-sm text-muted mb-5">This will immediately notify doctor + supervisor + charge nurse</p>
+
+    <button class="emergency-btn" onclick="triggerEmergency()" style="margin-bottom:24px">🚨</button>
+
+    <div class="card p-4" style="max-width:360px;width:100%;border-color:rgba(240,78,106,0.3)">
+      <label class="label">Emergency Type</label>
+      <select class="input mb-3" style="cursor:pointer">
+        <option>Code Blue — Cardiac Arrest</option>
+        <option>Code Red — Fire</option>
+        <option>Respiratory Failure</option>
+        <option>Rapid Deterioration</option>
+        <option>Patient Fall</option>
+      </select>
+      <label class="label">Location</label>
+      <input class="input" value="ICU Ward 4 — Room 204">
+    </div>
+  </div>
+
+  <div style="flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;animation:fadeIn .4s ease" id="emergency-sent">
+    <div style="font-size:64px;animation:pulse 1s ease-in-out 3">🚨</div>
+    <h2 class="text-2xl font-syne mt-3 text-danger">Emergency Alert Sent!</h2>
+    <p class="text-sm text-muted mb-4">All required personnel are being notified</p>
+
+    <div class="flex flex-col gap-3" style="max-width:360px;width:100%">
+      <div class="card p-3 flex items-center gap-3" style="border-color:rgba(0,212,170,0.3)">
+        <div class="dot dot-green"></div>
+        <div class="text-sm">Dr. Patel — Notified ✓</div>
+      </div>
+      <div class="card p-3 flex items-center gap-3" style="border-color:rgba(0,212,170,0.3)">
+        <div class="dot dot-green"></div>
+        <div class="text-sm">Supervisor James — Notified ✓</div>
+      </div>
+      <div class="card p-3 flex items-center gap-3" style="border-color:rgba(245,166,35,0.4)">
+        <div class="dot dot-yellow" style="animation:pulse 1s infinite"></div>
+        <div class="text-sm">Code Team — Responding…</div>
+      </div>
+    </div>
+
+    <button class="btn btn-ghost mt-5" onclick="goTo('screen-nurse-dashboard')">← Return to Dashboard</button>
+  </div>
+</div>
+
+<!-- ════════════════════════ SHIFT HANDOFF ════════════════════════ -->
+<div class="screen" id="screen-handoff">
+  <div class="topbar">
+    <button class="back-btn" onclick="goBack()">← Back</button>
+    <div class="font-syne font-bold">Shift Handoff</div>
+    <div style="width:80px"></div>
+  </div>
+
+  <div class="page-content">
+    <div class="card p-4 mb-3 text-center" style="border-color:rgba(167,139,250,0.3);background:rgba(167,139,250,0.06)">
+      <div style="font-size:40px mb-2">📋</div>
+      <h3 class="font-syne text-xl mt-2 mb-1">AI Shift Summary</h3>
+      <p class="text-sm text-muted mb-4">Generate a comprehensive report for incoming nurse</p>
+      <button class="btn btn-primary btn-lg" onclick="generateHandoff()" id="gen-btn">✨ Generate Summary</button>
+    </div>
+
+    <div id="handoff-content" style="display:none">
+      <div class="badge badge-ai mb-3">✨ AI Generated — 12:47 AM</div>
+
+      <div class="card p-4 mb-3" id="hc-1" style="animation:slideUp .5s ease">
+        <div class="flex items-center gap-2 mb-2">
+          <span style="font-size:18px">🚨</span>
+          <span class="font-semibold text-danger">Critical Patients (2)</span>
+        </div>
+        <p class="text-sm" style="overflow:hidden;white-space:nowrap;animation:typewriter 1.5s steps(60) ease" id="hw1">• Ahmed Khalid (Rm 204) — SpO₂ 88%, needs hourly monitoring</p>
+        <p class="text-sm mt-1" style="overflow:hidden;white-space:nowrap;animation:typewriter 1.5s steps(60) ease .3s" id="hw2">• Maria Lopez (Rm 208) — post-op, pain management ongoing</p>
+      </div>
+
+      <div class="card p-4 mb-3" style="animation:slideUp .5s ease .2s;opacity:0;animation-fill-mode:forwards">
+        <div class="flex items-center gap-2 mb-2">
+          <span style="font-size:18px">💊</span>
+          <span class="font-semibold text-warn">Pending Medications (3)</span>
+        </div>
+        <p class="text-sm">• Amoxicillin 500mg — Ahmed (2:00 AM)</p>
+        <p class="text-sm mt-1">• Morphine drip check — Maria (1:30 AM)</p>
+        <p class="text-sm mt-1">• Insulin — John T. Rm 210 (3:00 AM)</p>
+      </div>
+
+      <div class="card p-4 mb-3" style="animation:slideUp .5s ease .4s;opacity:0;animation-fill-mode:forwards">
+        <div class="flex items-center gap-2 mb-2">
+          <span style="font-size:18px">👨‍⚕️</span>
+          <span class="font-semibold text-primary">Doctor Notes</span>
+        </div>
+        <p class="text-sm">Dr. Patel: Increase O₂ if SpO₂ drops below 86%. Update vitals every 30 min.</p>
+      </div>
+
+      <div class="card p-4 mb-3" style="animation:slideUp .5s ease .6s;opacity:0;animation-fill-mode:forwards">
+        <div class="flex items-center gap-2 mb-2">
+          <span style="font-size:18px">✅</span>
+          <span class="font-semibold text-primary">Completed This Shift (8)</span>
+        </div>
+        <p class="text-sm text-muted">Blood pressure checks, IV replacements, wound dressings, vitals logging…</p>
+      </div>
+
+      <div class="flex gap-3 mt-4">
+        <button class="btn btn-primary flex-1">📤 Send to Next Nurse</button>
+        <button class="btn btn-ghost flex-1">🖨️ Print Report</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════ ADMIN DASHBOARD ════════════════════════ -->
+<div class="screen" id="screen-admin">
+  <div class="topbar">
+    <div class="logo">
+      <div class="logo-mark">📊</div>
+      <div>
+        <div style="font-size:14px;line-height:1.1">Admin View</div>
+        <div style="font-size:11px;font-weight:400;color:var(--muted)">City General Hospital</div>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <button class="btn btn-ghost btn-sm" onclick="goTo('screen-login')">Logout</button>
+    </div>
+  </div>
+
+  <div class="page-content-wide stagger">
+    <div style="max-width:700px;margin:0 auto;padding:0 24px">
+      <!-- Stats row -->
+      <div class="grid-3 mb-4 mt-4">
+        <div class="stat-card">
+          <div class="stat-num text-primary">142</div>
+          <div class="stat-label">Active Patients</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num text-warn">38</div>
+          <div class="stat-label">Nurses on Duty</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num text-danger">7</div>
+          <div class="stat-label">Critical Alerts</div>
+        </div>
+      </div>
+
+      <!-- Heatmap -->
+      <div class="card p-4 mb-4">
+        <div class="flex items-center justify-between mb-3">
+          <p class="section-title" style="margin-bottom:0">Hospital Workload Heatmap</p>
+          <div class="badge badge-ai">AI Analytics</div>
+        </div>
+        <div class="heatmap-grid" style="grid-template-columns:repeat(4,1fr)">
+          <div class="heatmap-cell heat-5">ICU<br>🔴 Overloaded</div>
+          <div class="heatmap-cell heat-3">Ward 2<br>🟡 High</div>
+          <div class="heatmap-cell heat-2">Ward 3<br>🟡 Moderate</div>
+          <div class="heatmap-cell heat-1">Ward 4<br>🟢 Normal</div>
+          <div class="heatmap-cell heat-4">ER<br>🔴 Critical</div>
+          <div class="heatmap-cell heat-2">Peds<br>🟡 Moderate</div>
+          <div class="heatmap-cell heat-0">Cardio<br>🟢 Low</div>
+          <div class="heatmap-cell heat-3">Post-Op<br>🟡 High</div>
+        </div>
+        <div class="flex items-center gap-3 mt-3 text-xs text-muted">
+          <span>● Low</span><span>● Moderate</span><span>● High</span><span>● Critical</span>
+        </div>
+      </div>
+
+      <!-- Alerts -->
+      <div class="card p-4 mb-4">
+        <p class="section-title">Live AI Insights</p>
+        <div class="flex flex-col gap-2">
+          <div class="flex items-center gap-3 p-3" style="border-radius:10px;background:rgba(240,78,106,0.08);border:1px solid rgba(240,78,106,0.2)">
+            <span>🔴</span><span class="text-sm flex-1">ICU ward is overloaded — 3 nurses above threshold</span>
+            <button class="btn btn-danger btn-sm">Assign</button>
+          </div>
+          <div class="flex items-center gap-3 p-3" style="border-radius:10px;background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.2)">
+            <span>🟡</span><span class="text-sm flex-1">Emergency Room staffing bottleneck detected</span>
+            <button class="btn btn-warn btn-sm">Review</button>
+          </div>
+          <div class="flex items-center gap-3 p-3" style="border-radius:10px;background:rgba(0,212,170,0.08);border:1px solid rgba(0,212,170,0.2)">
+            <span>🟢</span><span class="text-sm flex-1">Ward 4 operating efficiently — no action needed</span>
+            <button class="btn btn-outline btn-sm">View</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Nurse overview -->
+      <div class="card p-4">
+        <p class="section-title">Nurse Workload Overview</p>
+        <div class="flex flex-col gap-3" id="admin-nurse-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════ DOCTOR DASHBOARD ════════════════════════ -->
+<div class="screen" id="screen-doctor">
+  <div class="topbar">
+    <div class="logo">
+      <div class="logo-mark">🩺</div>
+      <div>
+        <div style="font-size:14px;line-height:1.1">Dr. Rohan Patel</div>
+        <div style="font-size:11px;font-weight:400;color:var(--muted)">Internal Medicine</div>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <button class="btn btn-ghost btn-sm" onclick="goTo('screen-login')">Logout</button>
+    </div>
+  </div>
+
+  <div class="page-content stagger">
+    <div class="grid-2 mb-4 mt-4">
+      <div class="stat-card"><div class="stat-num text-primary">8</div><div class="stat-label">My Patients</div></div>
+      <div class="stat-card"><div class="stat-num text-danger">2</div><div class="stat-label">Critical</div></div>
+    </div>
+
+    <div class="flex gap-3 mb-4">
+      <button class="btn btn-primary flex-1" onclick="goTo('screen-qr')">📷 Scan Patient QR</button>
+      <button class="btn btn-outline flex-1">+ New Treatment Plan</button>
+    </div>
+
+    <p class="section-title">My Patient List</p>
+    <div class="flex flex-col gap-3">
+      <div class="patient-card critical" onclick="goTo('screen-patient')">
+        <div class="flex items-center justify-between">
+          <div><div class="font-semibold">Ahmed Khalid</div><div class="text-xs text-muted">Room 204 · Acute Pneumonia</div></div>
+          <div class="text-right"><div class="badge badge-critical">Critical</div><div class="text-xs text-muted mt-1">SpO₂ 88%</div></div>
+        </div>
+        <div class="divider"></div>
+        <div class="flex gap-3">
+          <button class="btn btn-blue btn-sm flex-1" onclick="event.stopPropagation();alert('Edit Treatment Plan')">✏️ Edit Plan</button>
+          <button class="btn btn-ghost btn-sm flex-1" onclick="event.stopPropagation();alert('New mission created!')">+ Mission</button>
+        </div>
+      </div>
+      <div class="patient-card moderate">
+        <div class="flex items-center justify-between">
+          <div><div class="font-semibold">Maria Lopez</div><div class="text-xs text-muted">Room 208 · Post-Op Recovery</div></div>
+          <div class="text-right"><div class="badge badge-moderate">Moderate</div><div class="text-xs text-muted mt-1">Stable trend</div></div>
+        </div>
+        <div class="divider"></div>
+        <div class="flex gap-3">
+          <button class="btn btn-blue btn-sm flex-1">✏️ Edit Plan</button>
+          <button class="btn btn-ghost btn-sm flex-1">+ Mission</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════ PATIENT PORTAL ════════════════════════ -->
+<div class="screen" id="screen-patient-portal">
+  <div class="topbar">
+    <div class="logo">
+      <div class="logo-mark">🛏️</div>
+      <div>
+        <div style="font-size:14px;line-height:1.1">Ahmed Khalid</div>
+        <div style="font-size:11px;font-weight:400;color:var(--muted)">Patient Portal</div>
+      </div>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="goTo('screen-login')">Logout</button>
+  </div>
+
+  <div class="page-content stagger">
+    <div class="card p-4 mb-3" style="border-color:rgba(240,78,106,0.3);background:rgba(240,78,106,0.05)">
+      <div class="flex items-center gap-3">
+        <div style="font-size:32px">🛏️</div>
+        <div>
+          <div class="font-semibold text-lg">Ahmed Khalid</div>
+          <div class="text-sm text-muted">Room 204 · ICU · Day 3</div>
+          <div class="badge badge-critical mt-1">Critical Condition</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2 mb-3">
+      <div class="stat-card"><div class="stat-num text-danger">88%</div><div class="stat-label">SpO₂</div></div>
+      <div class="stat-card"><div class="stat-num text-warn">38.2°</div><div class="stat-label">Temp</div></div>
+    </div>
+
+    <div class="card p-4 mb-3">
+      <p class="section-title">Assigned Team</p>
+      <div class="flex flex-col gap-2">
+        <div class="flex items-center gap-3"><div class="avatar" style="width:36px;height:36px;font-size:13px">RP</div><div><div class="text-sm font-semibold">Dr. Rohan Patel</div><div class="text-xs text-muted">Attending Physician</div></div></div>
+        <div class="flex items-center gap-3"><div class="avatar" style="width:36px;height:36px;font-size:13px">SR</div><div><div class="text-sm font-semibold">Nurse Sarah R.</div><div class="text-xs text-muted">Primary Nurse · ICU</div></div></div>
+      </div>
+    </div>
+
+    <p class="section-title">Upcoming Care Tasks</p>
+    <div class="flex flex-col gap-2">
+      <div class="card p-3 flex items-center gap-3"><span style="font-size:18px">💊</span><div class="flex-1"><div class="text-sm font-semibold">Antibiotic Dose</div><div class="text-xs text-muted">2:00 AM</div></div><div class="badge badge-pending">Scheduled</div></div>
+      <div class="card p-3 flex items-center gap-3"><span style="font-size:18px">📡</span><div class="flex-1"><div class="text-sm font-semibold">Vitals Check</div><div class="text-xs text-muted">Every 30 min</div></div><div class="badge badge-progress">Active</div></div>
+      <div class="card p-3 flex items-center gap-3"><span style="font-size:18px">🫀</span><div class="flex-1"><div class="text-sm font-semibold">ECG Monitoring</div><div class="text-xs text-muted">Continuous</div></div><div class="badge badge-stable">Running</div></div>
+    </div>
+
+    <div class="mt-3">
+      <button class="btn btn-outline w-full" onclick="goTo('screen-timeline')">📅 View My Care Timeline</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════ BREAK SCREEN ════════════════════════ -->
+<div class="screen" id="screen-break">
+  <div class="topbar">
+    <button class="back-btn" onclick="goBack()">← Back</button>
+    <div class="font-syne font-bold">Wellness Break</div>
+    <div style="width:80px"></div>
+  </div>
+
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center">
+    <div class="stagger">
+      <h2 class="text-xl mb-1">Time for a Break ☕</h2>
+      <p class="text-sm text-muted mb-5">You've been on duty for 2hrs. Take 5 minutes for yourself.</p>
+
+      <div class="breath-circle mb-4" style="margin:0 auto">
+        <div>
+          <p class="text-sm text-primary font-semibold">Breathe</p>
+          <p class="text-xs text-muted">In… Out…</p>
+        </div>
+      </div>
+      <p class="text-xs text-muted mb-5">Touch the circle and breathe with it</p>
+
+      <div class="card p-4 mb-3" style="max-width:340px;width:100%;margin:0 auto">
+        <p class="section-title">Relaxation Activities</p>
+        <div class="flex flex-col gap-2">
+          <div class="flex items-center gap-3 p-2" style="border-radius:8px;cursor:pointer;background:rgba(255,255,255,0.04)"><span>🎵</span><span class="text-sm">Calming Music (5 min)</span></div>
+          <div class="flex items-center gap-3 p-2" style="border-radius:8px;cursor:pointer;background:rgba(255,255,255,0.04)"><span>🧘</span><span class="text-sm">Guided Meditation</span></div>
+          <div class="flex items-center gap-3 p-2" style="border-radius:8px;cursor:pointer;background:rgba(255,255,255,0.04)"><span>💬</span><span class="text-sm">Connect with Nearby Nurses</span></div>
+        </div>
+      </div>
+
+      <div class="card p-3" style="max-width:340px;width:100%;margin:0 auto;margin-bottom:16px">
+        <p class="text-sm text-center text-muted">Nurses near you taking a break:</p>
+        <div class="flex justify-center gap-3 mt-2">
+          <div class="flex flex-col items-center gap-1"><div class="avatar" style="width:38px;height:38px;font-size:12px">PR</div><span class="text-xs text-muted">Priya</span></div>
+          <div class="flex flex-col items-center gap-1"><div class="avatar" style="width:38px;height:38px;font-size:12px;--primary:#f5a623">JT</div><span class="text-xs text-muted">James</span></div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="goBack()">I'm Refreshed — Back to Work</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════ COGNITIVE LOAD ════════════════════════ -->
+<div class="screen" id="screen-load">
+  <div class="topbar">
+    <button class="back-btn" onclick="goBack()">← Back</button>
+    <div class="font-syne font-bold">My Workload</div>
+    <div style="width:80px"></div>
+  </div>
+
+  <div class="page-content stagger">
+    <div class="card p-4 mb-3 text-center" style="border-color:rgba(245,166,35,0.3);background:rgba(245,166,35,0.05)">
+      <div style="
+        width:100px;height:100px;border-radius:50%;margin:0 auto 16px;
+        background:conic-gradient(#f5a623 65%, rgba(255,255,255,0.06) 0deg);
+        display:flex;align-items:center;justify-content:center;position:relative
+      ">
+        <div style="position:absolute;inset:10px;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center">
+          <span class="font-syne font-bold text-xl text-warn">65%</span>
+        </div>
+      </div>
+      <div class="badge badge-moderate mb-2">Medium Load</div>
+      <p class="text-sm text-muted">You're managing well, but watch your energy.</p>
+    </div>
+
+    <div class="grid-3 mb-3">
+      <div class="stat-card"><div class="stat-num text-warn">6</div><div class="stat-label">Active Tasks</div></div>
+      <div class="stat-card"><div class="stat-num text-danger">2</div><div class="stat-label">Critical Pts</div></div>
+      <div class="stat-card"><div class="stat-num text-primary">3</div><div class="stat-label">Pending</div></div>
+    </div>
+
+    <div class="ai-card mb-3">
+      <div class="flex items-center gap-2 mb-2"><div class="badge badge-ai">✨ AI Suggestion</div></div>
+      <p class="text-sm">You've been operating above 60% load for 90 minutes. Consider requesting support for <strong class="text-primary">Room 204</strong>.</p>
+      <button class="btn btn-primary btn-sm mt-3" onclick="goTo('screen-help')">Request Help Now</button>
+    </div>
+
+    <div class="card p-4">
+      <p class="section-title">Break Reminders</p>
+      <div class="flex items-center justify-between">
+        <span class="text-sm">Next recommended break</span>
+        <span class="badge badge-moderate">In 28 min</span>
+      </div>
+      <div class="mt-3">
+        <button class="btn btn-ghost w-full" onclick="goTo('screen-break')">☕ Take Break Now</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- #app -->
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay" style="display:none" onclick="closeModal()">
+  <div class="modal" onclick="event.stopPropagation()" id="modal-content"></div>
+</div>
+
+<script>
+// ─── DATA ────────────────────────────────────────────────────────────────────
+const patients = [
+  {id:'p1',name:'Ahmed Khalid',room:'204',ward:'ICU',condition:'critical',priority:1,next:'Check SpO₂ & O₂ Supply',diagnosis:'Acute Pneumonia',age:58,doctor:'Dr. Patel'},
+  {id:'p2',name:'Maria Lopez',room:'208',ward:'Ward 2',condition:'moderate',priority:2,next:'Wound Dressing Change',diagnosis:'Post-Op Recovery',age:44,doctor:'Dr. Singh'},
+  {id:'p3',name:'John Thomas',room:'210',ward:'Ward 3',condition:'moderate',priority:3,next:'Insulin Administration',diagnosis:'Type 2 Diabetes',age:67,doctor:'Dr. Patel'},
+  {id:'p4',name:'Priya Sharma',room:'214',ward:'Peds',condition:'stable',priority:4,next:'Vitals Monitoring',diagnosis:'Viral Fever',age:12,doctor:'Dr. Kumar'},
+  {id:'p5',name:'Robert Chen',room:'220',ward:'Cardio',condition:'stable',priority:5,next:'Medication at 3AM',diagnosis:'Atrial Fibrillation',age:72,doctor:'Dr. Lee'},
+];
+
+const missions = [
+  {id:'m1',icon:'🫀',title:'Check Blood Pressure & SpO₂',status:'in-progress',time:'Now',desc:'Monitor vitals and ensure oxygen levels are within range'},
+  {id:'m2',icon:'💊',title:'Administer Antibiotic IV',status:'pending',time:'2:00 AM',desc:'Amoxicillin 500mg via IV — confirm patient ID first'},
+  {id:'m3',icon:'💧',title:'Replace IV Fluid Bag',status:'pending',time:'2:30 AM',desc:'Saline drip — check for air bubbles and flow rate'},
+  {id:'m4',icon:'📊',title:'Post-Surgery Monitoring',status:'completed',time:'12:00 AM',desc:'Hourly vitals check post-procedure'},
+];
+
+const timelineEvents = [
+  {time:'11:00 PM',action:'Vitals recorded — BP 130/90, HR 108',staff:'Nurse Sarah R.',type:'normal',verified:true},
+  {time:'10:45 PM',action:'O₂ alert triggered — SpO₂ dropped to 88%',staff:'System',type:'danger',verified:true},
+  {time:'10:30 PM',action:'IV fluid replaced successfully',staff:'Nurse Sarah R.',type:'normal',verified:true},
+  {time:'9:15 PM',action:'Dr. Patel updated treatment plan',staff:'Dr. Rohan Patel',type:'normal',verified:true},
+  {time:'8:00 PM',action:'Antibiotic administered — Amoxicillin 500mg',staff:'Nurse James T.',type:'normal',verified:true},
+  {time:'6:30 PM',action:'Patient admitted to ICU',staff:'Dr. Patel · Admin',type:'normal',verified:true},
+];
+
+const missionSteps = [
+  {step:1,text:'Confirm patient identity using wristband QR code',completed:false},
+  {step:2,text:'Prepare medication: Amoxicillin 500mg IV solution',completed:false},
+  {step:3,text:'Check IV line for blockage or air bubbles',completed:false},
+  {step:4,text:'Administer medication slowly over 30 minutes',completed:false},
+  {step:5,text:'Record time and dosage in patient chart',completed:false},
+];
+
+const adminNurses = [
+  {name:'Sarah R.',ward:'ICU Ward 4',load:65,status:'medium'},
+  {name:'Priya Rajan',ward:'Ward 2',load:40,status:'low'},
+  {name:'James T.',ward:'ER',load:88,status:'high'},
+  {name:'Linda M.',ward:'Peds',load:30,status:'low'},
+  {name:'David K.',ward:'Post-Op',load:72,status:'medium'},
+];
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let currentRole = 'nurse';
+let history = [];
+let currentScreen = 'screen-login';
+let isVoicePlaying = false;
+
+// ─── ROUTING ─────────────────────────────────────────────────────────────────
+function goTo(id) {
+  document.getElementById(currentScreen).classList.remove('active');
+  history.push(currentScreen);
+  currentScreen = id;
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+  initScreen(id);
+}
+
+function goBack() {
+  if(history.length === 0) return;
+  document.getElementById(currentScreen).classList.remove('active');
+  currentScreen = history.pop();
+  document.getElementById(currentScreen).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function initScreen(id) {
+  if(id === 'screen-nurse-dashboard') renderPatientList();
+  if(id === 'screen-patient') renderMissions();
+  if(id === 'screen-timeline') renderTimeline();
+  if(id === 'screen-admin') renderAdminNurses();
+  if(id === 'screen-handoff') {
+    document.getElementById('handoff-content').style.display='none';
+    document.getElementById('gen-btn').style.display='inline-flex';
+  }
+  if(id === 'screen-help') {
+    document.getElementById('ai-recommendation').style.display='none';
+  }
+  if(id === 'screen-emergency') {
+    document.getElementById('emergency-main').style.display='flex';
+    document.getElementById('emergency-sent').style.display='none';
+  }
+}
+
+// ─── LOGIN ───────────────────────────────────────────────────────────────────
+function selectRole(el, role) {
+  document.querySelectorAll('.role-card').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  currentRole = role;
+}
+
+function handleLogin() {
+  if(currentRole === 'nurse') goTo('screen-onboarding');
+  else if(currentRole === 'doctor') goTo('screen-doctor');
+  else if(currentRole === 'admin') goTo('screen-admin');
+  else if(currentRole === 'patient') goTo('screen-patient-portal');
+}
+
+// ─── CHIPS ───────────────────────────────────────────────────────────────────
+function toggleChip(el) { el.classList.toggle('selected'); }
+
+// ─── ONBOARDING ──────────────────────────────────────────────────────────────
+function saveSkills() {
+  document.getElementById('ob-step3').classList.add('done');
+  setTimeout(()=>goTo('screen-nurse-dashboard'), 400);
+}
+
+// ─── PATIENT LIST ─────────────────────────────────────────────────────────────
+function renderPatientList() {
+  const el = document.getElementById('patient-list');
+  if(!el) return;
+  el.innerHTML = patients.map((p,i)=>`
+    <div class="patient-card ${p.condition}" onclick="goTo('screen-patient')" style="animation:slideUp .4s ease ${i*0.07}s backwards">
+      <div class="flex items-center justify-between mb-2">
+        <div>
+          <div class="font-semibold">${p.name}</div>
+          <div class="text-xs text-muted">Room ${p.room} · ${p.ward}</div>
+        </div>
+        <div class="text-right">
+          <div class="badge badge-${p.condition}">${p.condition==='critical'?'🔴 Critical':p.condition==='moderate'?'🟡 Moderate':'🟢 Stable'}</div>
+          <div class="text-xs text-muted mt-1">Priority #${p.priority}</div>
+        </div>
+      </div>
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2 text-sm text-muted">
+          <span>→</span> <span class="text-primary">${p.next}</span>
+        </div>
+        <div class="text-xs text-muted">${p.condition==='critical'?'Now':'Scheduled'}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ─── MISSIONS ─────────────────────────────────────────────────────────────────
+function renderMissions() {
+  const el = document.getElementById('mission-list');
+  if(!el) return;
+  el.innerHTML = missions.map((m,i)=>`
+    <div class="mission-card ${m.status}" style="animation:slideUp .4s ease ${i*0.08}s backwards">
+      <div class="flex items-center gap-3">
+        <div class="mission-check ${m.status==='completed'?'done':m.status==='in-progress'?'active':'pending'}">
+          ${m.status==='completed'?'✓':m.status==='in-progress'?'▶':'○'}
+        </div>
+        <div class="flex-1">
+          <div class="font-semibold text-sm">${m.icon} ${m.title}</div>
+          <div class="text-xs text-muted mt-1">${m.desc}</div>
+        </div>
+        <div class="text-right">
+          <div class="badge ${m.status==='completed'?'badge-stable':m.status==='in-progress'?'badge-progress':'badge-pending'}">${m.status.replace('-',' ')}</div>
+          <div class="text-xs text-muted mt-1">${m.time}</div>
+        </div>
+      </div>
+      ${m.status!=='completed'?`
+      <div class="mt-3">
+        <button class="btn btn-primary btn-sm w-full" onclick="event.stopPropagation();startMission('${m.id}','${m.icon} ${m.title}')">
+          ${m.status==='in-progress'?'⚡ Continue':'▶ Start'} Mission
+        </button>
+      </div>`:''}
+    </div>
+  `).join('');
+}
+
+function startMission(id, title) {
+  document.getElementById('mission-title-bar').textContent = title.split(' ').slice(1).join(' ');
+  document.getElementById('mission-heading').textContent = title;
+  const m = missions.find(x=>x.id===id);
+  if(m) document.getElementById('mission-icon').textContent = m.icon;
+  renderMissionSteps();
+  goTo('screen-mission');
+}
+
+function renderMissionSteps() {
+  const el = document.getElementById('mission-steps-list');
+  if(!el) return;
+  el.innerHTML = missionSteps.map((s,i)=>`
+    <div class="card p-3 flex items-start gap-3" style="animation:slideIn .4s ease ${i*0.08}s backwards;cursor:pointer;border-color:${s.completed?'rgba(0,212,170,0.4)':'rgba(255,255,255,0.08)'};background:${s.completed?'rgba(0,212,170,0.08)':'var(--card)'}" onclick="toggleStepComplete(${i})">
+      <div style="width:28px;height:28px;border-radius:50%;background:${s.completed?'linear-gradient(135deg,#00d4aa,#00b899)':i===0?'linear-gradient(135deg,#00d4aa,#00b899)':'rgba(255,255,255,0.07)'};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:${s.completed||i===0?'#05101f':'var(--muted)'};flex-shrink:0">${s.completed?'✓':s.step}</div>
+      <div class="text-sm" style="padding-top:4px;text-decoration:${s.completed?'line-through':'none'};opacity:${s.completed?'0.6':'1'}">${s.text}</div>
+    </div>
+  `).join('');
+}
+
+function toggleStepComplete(index) {
+  if(missionSteps[index]) {
+    missionSteps[index].completed = !missionSteps[index].completed;
+    renderMissionSteps();
+  }
+}
+
+function completeMission() {
+  const m = missions.find(x=>x.status==='in-progress');
+  if(m) m.status = 'completed';
+  showModal(`
+    <div class="text-center">
+      <div style="font-size:56px;margin-bottom:16px">✅</div>
+      <h3 class="font-syne text-xl mb-2">Mission Complete!</h3>
+      <p class="text-sm text-muted mb-4">Your action has been recorded and verified on the Care Timeline.</p>
+      <div class="badge badge-verified mb-4" style="margin:0 auto">⛓ Blockchain Verified Record</div>
+      <button class="btn btn-primary w-full mt-3" onclick="closeModal();goBack()">← Back to Patient</button>
+    </div>
+  `);
+}
+
+function playVoiceGuidance() {
+  const synth = window.speechSynthesis;
+  const btn = event.target;
+  
+  // If voice is currently playing, stop it
+  if(isVoicePlaying) {
+    synth.cancel();
+    isVoicePlaying = false;
+    if(btn) btn.textContent = '▶ Play';
+    return;
+  }
+  
+  // Start playing voice guidance
+  const missionHeading = document.getElementById('mission-heading')?.textContent || 'Mission';
+  const steps = missionSteps || [];
+  
+  const utterances = [];
+  
+  // Mission title
+  const titleUtterance = new SpeechSynthesisUtterance(missionHeading);
+  titleUtterance.rate = 0.95;
+  titleUtterance.pitch = 1.1;
+  titleUtterance.volume = 1;
+  utterances.push(titleUtterance);
+  
+  // Steps
+  steps.forEach((step, idx) => {
+    const stepUtterance = new SpeechSynthesisUtterance(`Step ${step.step}: ${step.text}`);
+    stepUtterance.rate = 0.9;
+    stepUtterance.pitch = 1;
+    stepUtterance.volume = 1;
+    utterances.push(stepUtterance);
+  });
+  
+  // Speak all utterances
+  utterances.forEach((u, i) => {
+    if(i === utterances.length - 1) {
+      u.onend = () => {
+        isVoicePlaying = false;
+        const playBtn = document.querySelector('[onclick="playVoiceGuidance()"]');
+        if(playBtn) playBtn.textContent = '▶ Play';
+      };
+    }
+    synth.speak(u);
+  });
+  
+  isVoicePlaying = true;
+  if(btn) btn.textContent = '⏹ Stop';
+}
+
+// ─── TIMELINE ─────────────────────────────────────────────────────────────────
+function renderTimeline() {
+  const el = document.getElementById('timeline-track');
+  if(!el) return;
+  el.innerHTML = timelineEvents.map((ev,i)=>`
+    <div class="timeline-event" style="animation-delay:${i*0.1}s">
+      <div class="timeline-node ${ev.type==='danger'?'danger':ev.type==='warning'?'warning':''}"></div>
+      <div class="card p-3">
+        <div class="flex items-start justify-between gap-2 mb-1">
+          <div class="mono text-xs text-primary">${ev.time}</div>
+          ${ev.verified?'<div class="badge badge-verified" style="font-size:10px;padding:2px 8px">⛓ Verified</div>':''}
+        </div>
+        <div class="text-sm font-semibold ${ev.type==='danger'?'text-danger':''}">${ev.action}</div>
+        <div class="text-xs text-muted mt-1">👤 ${ev.staff}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ─── ADMIN ────────────────────────────────────────────────────────────────────
+function renderAdminNurses() {
+  const el = document.getElementById('admin-nurse-list');
+  if(!el) return;
+  el.innerHTML = adminNurses.map(n=>`
+    <div class="flex items-center gap-3">
+      <div class="avatar" style="flex-shrink:0">${n.name.split(' ').map(x=>x[0]).join('')}</div>
+      <div class="flex-1">
+        <div class="flex justify-between text-sm mb-1">
+          <span class="font-semibold">${n.name}</span>
+          <span class="${n.status==='high'?'text-danger':n.status==='medium'?'text-warn':'text-primary'} font-semibold">${n.load}%</span>
+        </div>
+        <div class="text-xs text-muted mb-1">${n.ward}</div>
+        <div class="meter-bar"><div class="meter-fill meter-${n.status}" style="width:${n.load}%"></div></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ─── HELP ────────────────────────────────────────────────────────────────────
+function sendHelpRequest() {
+  const btn = event.target;
+  btn.textContent = '⏳ Matching AI…';
+  btn.disabled = true;
+  setTimeout(()=>{
+    btn.textContent = '✅ Request Sent!';
+    btn.style.background = 'linear-gradient(135deg,#00d4aa,#00b899)';
+    document.getElementById('ai-recommendation').style.display='block';
+    document.getElementById('ai-recommendation').style.animation='slideUp .5s ease';
+  }, 1800);
+}
+
+// ─── EMERGENCY ───────────────────────────────────────────────────────────────
+function triggerEmergency() {
+  showModal(`
+    <div class="text-center">
+      <div style="font-size:40px;margin-bottom:16px">⚠️</div>
+      <h3 class="font-syne text-xl mb-2 text-danger">Confirm Emergency</h3>
+      <p class="text-sm text-muted mb-4">This will immediately alert doctor, supervisor, and code team.</p>
+      <div class="flex gap-3">
+        <button class="btn btn-ghost flex-1" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-danger flex-1" onclick="closeModal();confirmEmergency()">🚨 Send Alert</button>
+      </div>
+    </div>
+  `);
+}
+
+function confirmEmergency() {
+  document.getElementById('emergency-main').style.display='none';
+  document.getElementById('emergency-sent').style.display='flex';
+}
+
+// ─── HANDOFF ─────────────────────────────────────────────────────────────────
+function generateHandoff() {
+  const btn = document.getElementById('gen-btn');
+  btn.textContent = '✨ Generating…';
+  btn.disabled = true;
+  setTimeout(()=>{
+    btn.style.display='none';
+    document.getElementById('handoff-content').style.display='block';
+  }, 2000);
+}
+
+// ─── QR SCAN ─────────────────────────────────────────────────────────────────
+function simulateScan() {
+  const btn = event.target;
+  btn.textContent = '⏳ Reading…';
+  btn.disabled = true;
+  setTimeout(()=>{
+    goTo('screen-patient');
+  }, 1500);
+}
+
+// ─── NOTIFICATIONS ────────────────────────────────────────────────────────────
+function showNotif() {
+  showModal(`
+    <h3 class="font-syne text-lg mb-3">Notifications</h3>
+    <div class="flex flex-col gap-2">
+      <div style="padding:12px;border-radius:10px;background:rgba(240,78,106,0.08);border:1px solid rgba(240,78,106,0.2)">
+        <div class="text-sm font-semibold text-danger">🔴 O₂ Alert — Room 204</div>
+        <div class="text-xs text-muted mt-1">SpO₂ dropped to 88% — 2 min ago</div>
+      </div>
+      <div style="padding:12px;border-radius:10px;background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.2)">
+        <div class="text-sm font-semibold text-warn">🟡 Medication Due — Room 210</div>
+        <div class="text-xs text-muted mt-1">Insulin administration in 15 min</div>
+      </div>
+      <div style="padding:12px;border-radius:10px;background:rgba(0,212,170,0.08);border:1px solid rgba(0,212,170,0.2)">
+        <div class="text-sm font-semibold text-primary">✅ Mission Completed</div>
+        <div class="text-xs text-muted mt-1">Wound dressing — Room 208 — verified</div>
+      </div>
+    </div>
+    <button class="btn btn-ghost w-full mt-3" onclick="closeModal()">Close</button>
+  `);
+}
+
+function showReportIssue() {
+  showModal(`
+    <h3 class="font-syne text-lg mb-3">⚠️ Report Issue</h3>
+    <label class="label">Issue Type</label>
+    <select class="input mb-3">
+      <option>Equipment Malfunction</option>
+      <option>Medication Error</option>
+      <option>Patient Complication</option>
+      <option>Missing Supplies</option>
+    </select>
+    <label class="label">Description</label>
+    <textarea class="input mb-3" rows="3" placeholder="Describe the issue…" style="resize:none"></textarea>
+    <div class="flex gap-3">
+      <button class="btn btn-ghost flex-1" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-warn flex-1" onclick="closeModal();alert('Issue reported and supervisor notified.')">Submit Report</button>
+    </div>
+  `);
+}
+
+// ─── MODAL ────────────────────────────────────────────────────────────────────
+function showModal(html) {
+  document.getElementById('modal-content').innerHTML = html;
+  document.getElementById('modal-overlay').style.display='flex';
+}
+function closeModal() {
+  document.getElementById('modal-overlay').style.display='none';
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+renderPatientList();
+</script>
+</body>
+</html>

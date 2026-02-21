@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedTech Automated QR</title>
+    <script src="https://unpkg.com/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; display: flex; justify-content: center; padding: 40px; }
+        .card { background: white; padding: 35px; border-radius: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); text-align: center; width: 350px; }
+        #qrcode { margin: 25px 0; display: flex; justify-content: center; }
+        .details-view { text-align: left; display: none; }
+        .info-box { background: #f8fafc; padding: 15px; border-radius: 12px; border-left: 5px solid #0056b3; margin-top: 15px; }
+        .label { font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: bold; }
+        .value { font-size: 17px; margin-bottom: 12px; font-weight: 600; color: #1e293b; }
+        .btn-back { width: 100%; margin-top: 20px; padding: 10px; background: #64748b; color: white; border: none; border-radius: 8px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div id="generator-ui">
+        <h2 style="color: #0f172a;">Patient QR Pass</h2>
+        <p style="color: #64748b; font-size: 14px;">Place on patient wristband or file</p>
+        
+        <div id="qrcode"></div>
+        
+        <p style="font-weight: bold; color: #0056b3;" id="display-id"></p>
+        <button onclick="window.print()" style="padding: 8px 16px; cursor: pointer;">Print QR Code</button>
+    </div>
+
+    <div id="details-ui" class="details-view">
+        <h2 style="color: #0056b3;">Medical Record</h2>
+        <div class="info-box">
+            <div class="label">Patient Name</div>
+            <div id="view-name" class="value"></div>
+            
+            <div class="label">Disease / Condition</div>
+            <div id="view-disease" class="value" style="color: #e11d48;"></div>
+            
+            <div class="label">Clinical Notes</div>
+            <div id="view-sys" class="value" style="font-size: 14px;"></div>
+        </div>
+        <button class="btn-back" onclick="window.location.href=window.location.pathname">Generate Mode</button>
+    </div>
+</div>
+
+<script>
+    const activePatientID = "PT-102"; 
+
+    const patientDatabase = {
+        "PT-101": { 
+            name: "John Doe", 
+            disease: "Chronic Hypertension", 
+            notes: "Stable. Daily Amlodipine 5mg." 
+        },
+        "PT-102": { 
+            name: "Jane Smith", 
+            disease: "Type 1 Diabetes", 
+            notes: "Insulin dependent. Monitor glucose levels." 
+        }
+    };
+
+    const currentUrl = window.location.href.split('?')[0];
+    const scanLink = `${currentUrl}?id=${activePatientID}`;
+
+    const qrCode = new QRCodeStyling({
+        width: 220,
+        height: 220,
+        data: scanLink,
+        dotsOptions: { color: "#0056b3", type: "rounded" },
+        cornersSquareOptions: { type: "extra-rounded", color: "#0f172a" },
+        backgroundOptions: { color: "#ffffff" }
+    });
+
+    document.getElementById('display-id').innerText = "ID: " + activePatientID;
+    qrCode.append(document.getElementById("qrcode"));
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const scannedID = urlParams.get('id');
+
+    if (scannedID && patientDatabase[scannedID]) {
+        document.getElementById('generator-ui').style.display = 'none';
+        document.getElementById('details-ui').style.display = 'block';
+        
+        const p = patientDatabase[scannedID];
+        document.getElementById('view-name').innerText = p.name;
+        document.getElementById('view-disease').innerText = p.disease;
+        document.getElementById('view-sys').innerText = p.notes;
+    }
+</script>
+
+</body>
+</html>
